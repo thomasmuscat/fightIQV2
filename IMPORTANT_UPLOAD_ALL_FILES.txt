@@ -1,0 +1,9 @@
+IMPORTANT
+
+Ce dossier contient un dossier caché : .github
+
+Sur Mac, dans le Finder, appuie sur :
+Cmd + Shift + .
+
+Cela affiche les fichiers cachés.
+Tu dois uploader .github dans GitHub, sinon l’onglet Actions ne verra pas le workflow.

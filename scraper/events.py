@@ -1,0 +1,51 @@
+from __future__ import annotations
+import pandas as pd
+from bs4 import BeautifulSoup
+from config import EVENTS_URL
+from scraper.http import soup_from_url
+from utils import clean_text, parse_date, slugify, stable_uuid
+
+def parse_events_page(soup: BeautifulSoup) -> list[dict]:
+    rows = soup.select("tr.b-statistics__table-row")
+    events = []
+    for row in rows:
+        link = row.select_one("a")
+        if not link:
+            continue
+        name = clean_text(link.get_text(" ", strip=True))
+        if not name:
+            continue
+        slug = slugify(name)
+        date_el = row.select_one(".b-statistics__date")
+        date = clean_text(date_el.get_text(" ", strip=True)) if date_el else None
+        cols = row.select("td")
+        location = clean_text(cols[-1].get_text(" ", strip=True)) if cols else None
+        city, country = None, None
+        if location and "," in location:
+            parts = [p.strip() for p in location.split(",")]
+            city = parts[0]
+            country = parts[-1]
+        elif location:
+            country = location
+        events.append({
+            "id": stable_uuid("event", slug),
+            "name": name,
+            "slug": slug,
+            "event_date": parse_date(date),
+            "venue": None,
+            "city": city,
+            "country": country,
+            "ufcstats_url": link.get("href"),
+            "data_source": "ufcstats_github_actions",
+        })
+    return events
+
+def scrape_events() -> pd.DataFrame:
+    print(f"[events] {EVENTS_URL}")
+    soup = soup_from_url(EVENTS_URL)
+    events = parse_events_page(soup)
+    df = pd.DataFrame(events)
+    if not df.empty:
+        df = df.drop_duplicates("slug").reset_index(drop=True)
+    print(f"[events] found={len(df)}")
+    return df
