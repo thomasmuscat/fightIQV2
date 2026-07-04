@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.env
+cache/*.html
+exports/*.csv
+logs/*.log
+.DS_Store
